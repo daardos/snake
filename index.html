@@ -3,50 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SNAKE_OS: FINAL_STABLE</title>
+    <title>SNAKE_OS: REBORN</title>
     <style>
         :root { --neon: #0f0; --bg: #020205; }
         * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; flex-direction: column; background: linear-gradient(-45deg, #020205, #080015, #001510, #050005); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: var(--neon); user-select: none; }
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         #menu { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px); padding: 20px; text-align: center; }
-        .section-title { font-size: 14px; letter-spacing: 2px; margin: 15px 0 10px; color: #555; }
-        .skin-list { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
-        .skin-card { border: 1px solid #222; padding: 10px; cursor: pointer; background: #050505; width: 70px; border-radius: 8px; transition: 0.3s; }
+        .skin-list { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; justify-content: center; }
+        .skin-card { border: 1px solid #222; padding: 10px; cursor: pointer; background: #050505; width: 75px; border-radius: 8px; transition: 0.3s; }
         .skin-card.active { border-color: var(--neon); box-shadow: 0 0 15px var(--neon); transform: scale(1.1); }
-        .skin-preview { width: 20px; height: 20px; margin: 0 auto 5px; border-radius: 3px; }
-        .mode-select { display: flex; gap: 15px; }
-        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 15px 25px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 5px; transition: 0.3s; }
-        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); }
+        .skin-preview { width: 25px; height: 25px; margin: 0 auto 5px; border-radius: 4px; }
+        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 15px 30px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 5px; margin: 5px; }
         #ui { display: none; flex-direction: column; height: 100vh; }
         #header { padding: 10px 20px; border-bottom: 1px solid rgba(0,255,0,0.1); display: flex; justify-content: space-between; background: rgba(0,0,0,0.7); }
         #viewport { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; }
-        canvas { border: 1px solid rgba(0,255,0,0.2); background: rgba(0,0,0,0.9); }
+        canvas { border: 1px solid rgba(0,255,0,0.2); background: #000; }
         .msg { position: absolute; background: rgba(0,0,0,0.95); padding: 30px; border: 2px solid var(--neon); display: none; text-align: center; z-index: 10; width: 85%; max-width: 400px; }
     </style>
 </head>
 <body>
 
 <div id="menu">
-    <h1 style="text-shadow: 0 0 10px var(--neon); margin: 0; font-size: 28px;">SNAKE_CORE_v7</h1>
-    <div class="section-title">1. ВЫБЕРИ_ОБОЛОЧКУ</div>
-    <div id="skin-list" class="skin-list"></div>
-    <div class="section-title">2. ВЫБЕРИ_ИНТЕРФЕЙС</div>
-    <div class="mode-select">
-        <button class="btn" onclick="App.start('pc')">DESKTOP</button>
-        <button class="btn" onclick="App.start('mobile')">MOBILE</button>
+    <h1 style="text-shadow: 0 0 10px var(--neon);">SNAKE_OS_v7</h1>
+    <div class="skin-list" id="skin-list"></div>
+    <div>
+        <button class="btn" onclick="App.start('pc')">PC_MODE</button>
+        <button class="btn" onclick="App.start('mobile')">MOBILE_MODE</button>
     </div>
 </div>
 
 <div id="ui">
-    <div id="header">
-        <div>SCORE: <span id="ui-score">0</span></div>
-        <div style="color:cyan; font-size: 10px;">LATENCY: ZERO</div>
-    </div>
+    <div id="header"><div>SCORE: <span id="ui-score">0</span></div><div>SYSTEM: ONLINE</div></div>
     <div id="viewport">
         <canvas id="main"></canvas>
         <div id="death-msg" class="msg">
-            <h1 style="color:red; margin:0 0 10px 0;">SYSTEM_CRASH</h1>
+            <h1 style="color:red">SYSTEM_CRASH</h1>
             <p id="final-score"></p>
             <button class="btn" onclick="location.reload()">REBOOT</button>
         </div>
@@ -55,25 +47,22 @@
 
 <script>
 const Skins = {
-    green: { color: '#0f0', head: '#fff' },
-    cyan:  { color: '#0ff', head: '#fff' },
-    gold:  { color: '#ffd700', head: '#fff' },
-    lava:  { color: '#f40', head: '#ff0' }
+    green: '#0f0', cyan: '#0ff', gold: '#ffd700', lava: '#f40'
 };
 
 const App = {
     skin: 'green',
     init() {
         const list = document.getElementById('skin-list');
-        Object.entries(Skins).forEach(([key, s]) => {
+        Object.entries(Skins).forEach(([key, color]) => {
             const card = document.createElement('div');
             card.className = `skin-card ${this.skin === key ? 'active' : ''}`;
-            card.innerHTML = `<div class="skin-preview" style="background:${s.color}"></div><div style="font-size:9px">${key.toUpperCase()}</div>`;
+            card.innerHTML = `<div class="skin-preview" style="background:${color}"></div><div style="font-size:10px">${key.toUpperCase()}</div>`;
             card.onclick = () => {
                 this.skin = key;
                 document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
-                document.documentElement.style.setProperty('--neon', s.color);
+                document.documentElement.style.setProperty('--neon', color);
             };
             list.appendChild(card);
         });
@@ -81,18 +70,16 @@ const App = {
     start(mode) {
         document.getElementById('menu').style.display = 'none';
         document.getElementById('ui').style.display = 'flex';
-        Game.init(mode, Skins[this.skin]);
+        Game.boot(mode, Skins[this.skin]);
     }
 };
 
 const Game = {
-    init(mode, skin) {
+    boot(mode, color) {
         this.canvas = document.getElementById('main');
         this.ctx = this.canvas.getContext('2d');
         this.grid = mode === 'mobile' ? 20 : 25;
-        this.skin = skin;
-        this.score = 0;
-        this.isDead = false;
+        this.color = color;
         
         const s = Math.min(window.innerWidth - 30, window.innerHeight - 150);
         this.tileSize = Math.floor(s / this.grid);
@@ -101,11 +88,13 @@ const Game = {
         this.snake = [{x: 10, y: 10}, {x: 10, y: 11}, {x: 10, y: 12}];
         this.dir = {x: 0, y: -1};
         this.nextDir = {x: 0, y: -1};
-        this.portals = [{x1: 2, y1: 2, x2: this.grid-3, y2: this.grid-3, color: 'cyan'}];
-        
-        this.spawnFood();
+        this.portals = [{x1: 2, y1: 2, x2: this.grid-3, y2: this.grid-3}];
+        this.score = 0;
+        this.isDead = false;
+
         this.bind(mode);
-        this.run();
+        this.spawnFood();
+        this.loop();
     },
 
     bind(mode) {
@@ -120,10 +109,10 @@ const Game = {
             };
         } else {
             let tsX, tsY;
-            document.ontouchstart = e => { tsX = e.touches[0].clientX; tsY = e.touches[0].clientY; };
+            document.ontouchstart = e => { tsX = e.touches.clientX; tsY = e.touches.clientY; };
             document.ontouchend = e => {
-                let dx = e.changedTouches[0].clientX - tsX;
-                let dy = e.changedTouches[0].clientY - tsY;
+                let dx = e.changedTouches.clientX - tsX;
+                let dy = e.changedTouches.clientY - tsY;
                 let d = Math.abs(dx) > Math.abs(dy) ? {x: dx > 0 ? 1 : -1, y: 0} : {x: 0, y: dy > 0 ? 1 : -1};
                 if(d.x !== -this.dir.x && d.y !== -this.dir.y) this.nextDir = d;
             };
@@ -134,8 +123,9 @@ const Game = {
         this.food = {x: Math.floor(Math.random()*this.grid), y: Math.floor(Math.random()*this.grid)};
     },
 
-    run() {
+    loop() {
         if(this.isDead) return;
+        
         this.dir = this.nextDir;
         let head = {x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y};
 
@@ -145,7 +135,7 @@ const Game = {
             else if(head.x === p.x2 && head.y === p.y2) head = {x: p.x1, y: p.y1};
         });
 
-        // Смерть
+        // Проверка смерти
         if(head.x < 0 || head.x >= this.grid || head.y < 0 || head.y >= this.grid || 
            this.snake.some(s => s.x === head.x && s.y === head.y)) {
             this.isDead = true;
@@ -164,26 +154,30 @@ const Game = {
         }
 
         this.draw();
-        setTimeout(() => requestAnimationFrame(() => this.run()), 100);
+        setTimeout(() => requestAnimationFrame(() => this.loop()), 100);
     },
 
     draw() {
-        this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        // Полная очистка для стабильности видимости
+        this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
+        // Порталы
         this.portals.forEach(p => {
-            this.ctx.strokeStyle = p.color; this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = 'cyan'; this.ctx.lineWidth = 2;
             this.ctx.strokeRect(p.x1*this.tileSize+2, p.y1*this.tileSize+2, this.tileSize-4, this.tileSize-4);
             this.ctx.strokeRect(p.x2*this.tileSize+2, p.y2*this.tileSize+2, this.tileSize-4, this.tileSize-4);
         });
 
-        this.ctx.fillStyle = '#f0f'; this.ctx.shadowBlur = 10; this.ctx.shadowColor = '#f0f';
+        // Еда
+        this.ctx.fillStyle = '#f0f'; this.ctx.shadowBlur = 15; this.ctx.shadowColor = '#f0f';
         this.ctx.fillRect(this.food.x*this.tileSize+4, this.food.y*this.tileSize+4, this.tileSize-8, this.tileSize-8);
 
+        // Змейка
         this.snake.forEach((s, i) => {
-            this.ctx.fillStyle = i === 0 ? '#fff' : this.skin.color;
-            this.ctx.shadowBlur = i === 0 ? 15 : 0;
-            this.ctx.shadowColor = this.skin.color;
+            this.ctx.fillStyle = i === 0 ? '#fff' : this.color;
+            this.ctx.shadowBlur = i === 0 ? 20 : 0;
+            this.ctx.shadowColor = this.color;
             this.ctx.fillRect(s.x*this.tileSize, s.y*this.tileSize, this.tileSize-1, this.tileSize-1);
         });
         this.ctx.shadowBlur = 0;
