@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SNAKE_OS: ZERO_LAG</title>
+    <title>SNAKE_OS: FINAL_FIX</title>
     <style>
         :root { --neon: #0f0; --bg: #020205; }
         * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
@@ -33,15 +33,15 @@
     <div id="skin-list" class="skin-list"></div>
     <div class="section-title">2. ВЫБЕРИ_ИНТЕРФЕЙС</div>
     <div class="mode-select">
-        <button class="btn" id="pc-start">DESKTOP (WASD)</button>
-        <button class="btn" id="mobile-start">MOBILE (SWIPE)</button>
+        <button class="btn" onclick="App.start('pc')">DESKTOP (WASD)</button>
+        <button class="btn" onclick="App.start('mobile')">MOBILE (SWIPE)</button>
     </div>
 </div>
 
 <div id="ui">
     <div id="header">
         <div>SCORE: <span id="ui-score">0</span></div>
-        <div id="ui-info" style="color:cyan; font-size: 10px;">LATENCY: LOW</div>
+        <div id="ui-info" style="color:cyan; font-size: 10px;">SYSTEM_STABLE</div>
     </div>
     <div id="viewport">
         <canvas id="main"></canvas>
@@ -69,8 +69,7 @@ const App = {
             const card = document.createElement('div');
             card.className = `skin-card ${this.selectedSkin === key ? 'active' : ''}`;
             card.innerHTML = `<div class="skin-preview" style="background:${s.color}"></div><div style="font-size:9px">${s.name}</div>`;
-            card.onclick = (e) => {
-                e.preventDefault();
+            card.onclick = () => {
                 this.selectedSkin = key;
                 document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
@@ -78,10 +77,6 @@ const App = {
             };
             list.appendChild(card);
         });
-
-        // Мгновенный старт без задержек клика
-        document.getElementById('pc-start').onpointerdown = () => this.start('pc');
-        document.getElementById('mobile-start').onpointerdown = () => this.start('mobile');
     },
     start(mode) {
         document.getElementById('menu').style.display = 'none';
@@ -94,50 +89,51 @@ const Engine = {
     isDead: false,
     score: 0,
     lastTick: 0,
-    tickRate: 100, // Скорость в мс
+    tickRate: 100,
 
     boot(mode, skin) {
         this.canvas = document.getElementById('main');
         this.ctx = this.canvas.getContext('2d');
         this.skin = skin;
         this.mode = mode;
-        this.grid = mode === 'mobile' ? 20 : 26;
+        this.grid = mode === 'mobile' ? 20 : 25;
+        
         const s = Math.min(window.innerWidth - 30, window.innerHeight - 140);
         this.tileSize = Math.floor(s / this.grid);
         this.canvas.width = this.canvas.height = this.grid * this.tileSize;
 
-        this.portals = [{x1: 3, y1: 3, x2: this.grid-4, y2: this.grid-4, color: 'cyan'}];
+        this.portals = [{x1: 2, y1: 2, x2: this.grid-3, y2: this.grid-3, color: 'cyan'}];
         this.snake = [{x:10, y:10}, {x:10, y:11}, {x:10, y:12}];
         this.dir = {x:0, y:-1}; this.nextDir = {x:0, y:-1};
         
         this.spawnFood();
         this.bindControls();
+        this.lastTick = performance.now();
         requestAnimationFrame((t) => this.loop(t));
     },
 
     bindControls() {
-        if (this.mode === 'pc') {
-            window.onkeydown = e => {
-                const k = {'KeyW':{x:0,y:-1},'KeyS':{x:0,y:1},'KeyA':{x:-1,y:0},'KeyD':{x:1,y:0},
-                           'ArrowUp':{x:0,y:-1},'ArrowDown':{x:0,y:1},'ArrowLeft':{x:-1,y:0},'ArrowRight':{x:1,y:0}};
-                if(k[e.code]) this.setDir(k[e.code]);
-            };
-        } else {
-            let tsX, tsY;
-            // Используем Pointer Events для максимальной скорости отклика
-            this.canvas.onpointerdown = e => {
-                tsX = e.clientX; tsY = e.clientY;
-            };
-            this.canvas.onpointerup = e => {
-                const dx = e.clientX - tsX;
-                const dy = e.clientY - tsY;
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    if (Math.abs(dx) > 20) this.setDir({x: dx > 0 ? 1 : -1, y: 0});
-                } else {
-                    if (Math.abs(dy) > 20) this.setDir({x: 0, y: dy > 0 ? 1 : -1});
-                }
-            };
-        }
+        // КЛАВИАТУРА
+        window.onkeydown = e => {
+            const k = {'KeyW':{x:0,y:-1},'KeyS':{x:0,y:1},'KeyA':{x:-1,y:0},'KeyD':{x:1,y:0},
+                       'ArrowUp':{x:0,y:-1},'ArrowDown':{x:0,y:1},'ArrowLeft':{x:-1,y:0},'ArrowRight':{x:1,y:0}};
+            if(k[e.code]) this.setDir(k[e.code]);
+        };
+
+        // ТАЧ (Свайпы)
+        let tsX, tsY;
+        this.canvas.ontouchstart = e => {
+            tsX = e.touches[0].clientX; tsY = e.touches[0].clientY;
+        };
+        this.canvas.ontouchend = e => {
+            const dx = e.changedTouches[0].clientX - tsX;
+            const dy = e.changedTouches[0].clientY - tsY;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (Math.abs(dx) > 20) this.setDir({x: dx > 0 ? 1 : -1, y: 0});
+            } else {
+                if (Math.abs(dy) > 20) this.setDir({x: 0, y: dy > 0 ? 1 : -1});
+            }
+        };
     },
 
     setDir(d) {
@@ -152,7 +148,7 @@ const Engine = {
     update() {
         if(this.isDead) return;
         this.dir = this.nextDir;
-        let head = { x: this.snake.x + this.dir.x, y: this.snake.y + this.dir.y };
+        let head = { x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y };
 
         this.portals.forEach(p => {
             if(head.x === p.x1 && head.y === p.y1) head = {x: p.x2, y: p.y2};
