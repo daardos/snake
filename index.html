@@ -2,54 +2,26 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SNAKE_OS: HYBRID_PRO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SNAKE_OS: ZERO_LAG</title>
     <style>
         :root { --neon: #0f0; --bg: #020205; }
         * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            margin: 0; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; 
-            display: flex; flex-direction: column;
-            background: linear-gradient(-45deg, #020205, #080015, #001510, #050005);
-            background-size: 400% 400%; animation: gradientBG 15s ease infinite;
-            color: var(--neon); user-select: none;
-        }
+        body { margin: 0; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; flex-direction: column; background: linear-gradient(-45deg, #020205, #080015, #001510, #050005); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: var(--neon); user-select: none; }
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-        /* СТАРТОВОЕ МЕНЮ */
-        #menu { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            backdrop-filter: blur(15px); padding: 20px; text-align: center;
-        }
-        
+        #menu { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px); padding: 20px; text-align: center; }
         .section-title { font-size: 14px; letter-spacing: 2px; margin: 15px 0 10px; color: #555; }
-        
-        /* Скины */
         .skin-list { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
-        .skin-card { 
-            border: 1px solid #222; padding: 10px; cursor: pointer; 
-            background: #050505; width: 70px; border-radius: 8px; transition: 0.3s;
-        }
+        .skin-card { border: 1px solid #222; padding: 10px; cursor: pointer; background: #050505; width: 70px; border-radius: 8px; transition: 0.3s; }
         .skin-card.active { border-color: var(--neon); box-shadow: 0 0 15px var(--neon); transform: scale(1.1); }
         .skin-preview { width: 20px; height: 20px; margin: 0 auto 5px; border-radius: 3px; }
-
-        /* Выбор режима */
         .mode-select { display: flex; gap: 15px; }
-        .btn { 
-            background: #000; border: 1px solid var(--neon); color: var(--neon); 
-            padding: 15px 25px; cursor: pointer; font-family: inherit; font-weight: bold; 
-            border-radius: 5px; transition: 0.3s;
-        }
+        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 15px 25px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 5px; transition: 0.3s; }
         .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); }
-
-        /* ИГРА */
         #ui { display: none; flex-direction: column; height: 100vh; }
         #header { padding: 10px 20px; border-bottom: 1px solid rgba(0,255,0,0.1); display: flex; justify-content: space-between; background: rgba(0,0,0,0.7); }
         #viewport { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; }
         canvas { border: 1px solid rgba(0,255,0,0.2); background: rgba(0,0,0,0.9); }
-
         .msg { position: absolute; background: rgba(0,0,0,0.95); padding: 30px; border: 2px solid var(--neon); display: none; text-align: center; z-index: 10; width: 85%; max-width: 400px; }
     </style>
 </head>
@@ -57,21 +29,19 @@
 
 <div id="menu">
     <h1 style="text-shadow: 0 0 10px var(--neon); margin: 0; font-size: 28px;">SNAKE_CORE_v7</h1>
-    
     <div class="section-title">1. ВЫБЕРИ_ОБОЛОЧКУ</div>
     <div id="skin-list" class="skin-list"></div>
-
     <div class="section-title">2. ВЫБЕРИ_ИНТЕРФЕЙС</div>
     <div class="mode-select">
-        <button class="btn" onclick="App.start('pc')">DESKTOP (WASD)</button>
-        <button class="btn" onclick="App.start('mobile')">MOBILE (SWIPE)</button>
+        <button class="btn" id="pc-start">DESKTOP (WASD)</button>
+        <button class="btn" id="mobile-start">MOBILE (SWIPE)</button>
     </div>
 </div>
 
 <div id="ui">
     <div id="header">
         <div>SCORE: <span id="ui-score">0</span></div>
-        <div id="ui-info" style="color:cyan; font-size: 10px;">SYSTEM_STABLE</div>
+        <div id="ui-info" style="color:cyan; font-size: 10px;">LATENCY: LOW</div>
     </div>
     <div id="viewport">
         <canvas id="main"></canvas>
@@ -99,7 +69,8 @@ const App = {
             const card = document.createElement('div');
             card.className = `skin-card ${this.selectedSkin === key ? 'active' : ''}`;
             card.innerHTML = `<div class="skin-preview" style="background:${s.color}"></div><div style="font-size:9px">${s.name}</div>`;
-            card.onclick = () => {
+            card.onclick = (e) => {
+                e.preventDefault();
                 this.selectedSkin = key;
                 document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
@@ -107,7 +78,10 @@ const App = {
             };
             list.appendChild(card);
         });
-        document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+        // Мгновенный старт без задержек клика
+        document.getElementById('pc-start').onpointerdown = () => this.start('pc');
+        document.getElementById('mobile-start').onpointerdown = () => this.start('mobile');
     },
     start(mode) {
         document.getElementById('menu').style.display = 'none';
@@ -119,52 +93,50 @@ const App = {
 const Engine = {
     isDead: false,
     score: 0,
-    
+    lastTick: 0,
+    tickRate: 100, // Скорость в мс
+
     boot(mode, skin) {
         this.canvas = document.getElementById('main');
         this.ctx = this.canvas.getContext('2d');
         this.skin = skin;
         this.mode = mode;
-        
-        // Настройка сетки: на мобиле клетки чуть крупнее для обзора
         this.grid = mode === 'mobile' ? 20 : 26;
         const s = Math.min(window.innerWidth - 30, window.innerHeight - 140);
         this.tileSize = Math.floor(s / this.grid);
         this.canvas.width = this.canvas.height = this.grid * this.tileSize;
 
-        // Порталы
-        const pMargin = 3;
-        this.portals = [{x1: pMargin, y1: pMargin, x2: this.grid-pMargin-1, y2: this.grid-pMargin-1, color: 'cyan'}];
-
+        this.portals = [{x1: 3, y1: 3, x2: this.grid-4, y2: this.grid-4, color: 'cyan'}];
         this.snake = [{x:10, y:10}, {x:10, y:11}, {x:10, y:12}];
         this.dir = {x:0, y:-1}; this.nextDir = {x:0, y:-1};
         
         this.spawnFood();
         this.bindControls();
-        this.loop();
+        requestAnimationFrame((t) => this.loop(t));
     },
 
     bindControls() {
         if (this.mode === 'pc') {
-            window.addEventListener('keydown', e => {
+            window.onkeydown = e => {
                 const k = {'KeyW':{x:0,y:-1},'KeyS':{x:0,y:1},'KeyA':{x:-1,y:0},'KeyD':{x:1,y:0},
                            'ArrowUp':{x:0,y:-1},'ArrowDown':{x:0,y:1},'ArrowLeft':{x:-1,y:0},'ArrowRight':{x:1,y:0}};
                 if(k[e.code]) this.setDir(k[e.code]);
-            });
+            };
         } else {
             let tsX, tsY;
-            document.addEventListener('touchstart', e => {
-                tsX = e.touches[0].clientX; tsY = e.touches[0].clientY;
-            }, {passive: false});
-            document.addEventListener('touchend', e => {
-                const dx = e.changedTouches[0].clientX - tsX;
-                const dy = e.changedTouches[0].clientY - tsY;
+            // Используем Pointer Events для максимальной скорости отклика
+            this.canvas.onpointerdown = e => {
+                tsX = e.clientX; tsY = e.clientY;
+            };
+            this.canvas.onpointerup = e => {
+                const dx = e.clientX - tsX;
+                const dy = e.clientY - tsY;
                 if (Math.abs(dx) > Math.abs(dy)) {
-                    if (Math.abs(dx) > 25) this.setDir({x: dx > 0 ? 1 : -1, y: 0});
+                    if (Math.abs(dx) > 20) this.setDir({x: dx > 0 ? 1 : -1, y: 0});
                 } else {
-                    if (Math.abs(dy) > 25) this.setDir({x: 0, y: dy > 0 ? 1 : -1});
+                    if (Math.abs(dy) > 20) this.setDir({x: 0, y: dy > 0 ? 1 : -1});
                 }
-            }, {passive: false});
+            };
         }
     },
 
@@ -180,19 +152,15 @@ const Engine = {
     update() {
         if(this.isDead) return;
         this.dir = this.nextDir;
-        let head = { x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y };
+        let head = { x: this.snake.x + this.dir.x, y: this.snake.y + this.dir.y };
 
-        // ПОРТАЛЫ
         this.portals.forEach(p => {
             if(head.x === p.x1 && head.y === p.y1) head = {x: p.x2, y: p.y2};
             else if(head.x === p.x2 && head.y === p.y2) head = {x: p.x1, y: p.y1};
         });
 
-        // СМЕРТЬ
-        const hitWall = head.x < 0 || head.x >= this.grid || head.y < 0 || head.y >= this.grid;
-        const hitSelf = this.snake.some(s => s.x === head.x && s.y === head.y);
-
-        if(hitWall || hitSelf) {
+        if(head.x < 0 || head.x >= this.grid || head.y < 0 || head.y >= this.grid || 
+           this.snake.some(s => s.x === head.x && s.y === head.y)) {
             this.isDead = true;
             document.getElementById('final-score').innerText = `РЕЗУЛЬТАТ: ${this.score}`;
             document.getElementById('death-msg').style.display = 'block';
@@ -212,16 +180,13 @@ const Engine = {
     draw() {
         this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.portals.forEach(p => {
             this.ctx.strokeStyle = p.color; this.ctx.lineWidth = 2;
             this.ctx.strokeRect(p.x1*this.tileSize+2, p.y1*this.tileSize+2, this.tileSize-4, this.tileSize-4);
             this.ctx.strokeRect(p.x2*this.tileSize+2, p.y2*this.tileSize+2, this.tileSize-4, this.tileSize-4);
         });
-
         this.ctx.fillStyle = '#f0f'; this.ctx.shadowBlur = 10; this.ctx.shadowColor = '#f0f';
         this.ctx.fillRect(this.food.x*this.tileSize+4, this.food.y*this.tileSize+4, this.tileSize-8, this.tileSize-8);
-
         this.snake.forEach((s, i) => {
             this.ctx.fillStyle = i === 0 ? '#fff' : this.skin.color;
             this.ctx.shadowBlur = i === 0 ? 15 : 0;
@@ -231,9 +196,13 @@ const Engine = {
         this.ctx.shadowBlur = 0;
     },
 
-    loop() {
-        this.update(); this.draw();
-        if(!this.isDead) setTimeout(() => requestAnimationFrame(() => this.loop()), 100);
+    loop(time) {
+        if (time - this.lastTick > this.tickRate) {
+            this.update();
+            this.draw();
+            this.lastTick = time;
+        }
+        if (!this.isDead) requestAnimationFrame((t) => this.loop(t));
     }
 };
 
