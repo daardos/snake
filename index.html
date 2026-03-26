@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SNAKE_OS: FINAL_FIX</title>
+    <title>SNAKE_OS: FINAL_STABLE</title>
     <style>
         :root { --neon: #0f0; --bg: #020205; }
         * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
@@ -33,15 +33,15 @@
     <div id="skin-list" class="skin-list"></div>
     <div class="section-title">2. ВЫБЕРИ_ИНТЕРФЕЙС</div>
     <div class="mode-select">
-        <button class="btn" onclick="App.start('pc')">DESKTOP (WASD)</button>
-        <button class="btn" onclick="App.start('mobile')">MOBILE (SWIPE)</button>
+        <button class="btn" onclick="App.start('pc')">DESKTOP</button>
+        <button class="btn" onclick="App.start('mobile')">MOBILE</button>
     </div>
 </div>
 
 <div id="ui">
     <div id="header">
         <div>SCORE: <span id="ui-score">0</span></div>
-        <div id="ui-info" style="color:cyan; font-size: 10px;">SYSTEM_STABLE</div>
+        <div style="color:cyan; font-size: 10px;">LATENCY: ZERO</div>
     </div>
     <div id="viewport">
         <canvas id="main"></canvas>
@@ -55,22 +55,22 @@
 
 <script>
 const Skins = {
-    green: { name: 'NEON', color: '#0f0' },
-    cyan:  { name: 'ICE', color: '#0ff' },
-    gold:  { name: 'GOLD', color: '#ffd700' },
-    lava:  { name: 'LAVA', color: '#f40' }
+    green: { color: '#0f0', head: '#fff' },
+    cyan:  { color: '#0ff', head: '#fff' },
+    gold:  { color: '#ffd700', head: '#fff' },
+    lava:  { color: '#f40', head: '#ff0' }
 };
 
 const App = {
-    selectedSkin: 'green',
+    skin: 'green',
     init() {
         const list = document.getElementById('skin-list');
         Object.entries(Skins).forEach(([key, s]) => {
             const card = document.createElement('div');
-            card.className = `skin-card ${this.selectedSkin === key ? 'active' : ''}`;
-            card.innerHTML = `<div class="skin-preview" style="background:${s.color}"></div><div style="font-size:9px">${s.name}</div>`;
+            card.className = `skin-card ${this.skin === key ? 'active' : ''}`;
+            card.innerHTML = `<div class="skin-preview" style="background:${s.color}"></div><div style="font-size:9px">${key.toUpperCase()}</div>`;
             card.onclick = () => {
-                this.selectedSkin = key;
+                this.skin = key;
                 document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
                 document.documentElement.style.setProperty('--neon', s.color);
@@ -81,85 +81,76 @@ const App = {
     start(mode) {
         document.getElementById('menu').style.display = 'none';
         document.getElementById('ui').style.display = 'flex';
-        Engine.boot(mode, Skins[this.selectedSkin]);
+        Game.init(mode, Skins[this.skin]);
     }
 };
 
-const Engine = {
-    isDead: false,
-    score: 0,
-    lastTick: 0,
-    tickRate: 100,
-
-    boot(mode, skin) {
+const Game = {
+    init(mode, skin) {
         this.canvas = document.getElementById('main');
         this.ctx = this.canvas.getContext('2d');
-        this.skin = skin;
-        this.mode = mode;
         this.grid = mode === 'mobile' ? 20 : 25;
+        this.skin = skin;
+        this.score = 0;
+        this.isDead = false;
         
-        const s = Math.min(window.innerWidth - 30, window.innerHeight - 140);
+        const s = Math.min(window.innerWidth - 30, window.innerHeight - 150);
         this.tileSize = Math.floor(s / this.grid);
         this.canvas.width = this.canvas.height = this.grid * this.tileSize;
 
+        this.snake = [{x: 10, y: 10}, {x: 10, y: 11}, {x: 10, y: 12}];
+        this.dir = {x: 0, y: -1};
+        this.nextDir = {x: 0, y: -1};
         this.portals = [{x1: 2, y1: 2, x2: this.grid-3, y2: this.grid-3, color: 'cyan'}];
-        this.snake = [{x:10, y:10}, {x:10, y:11}, {x:10, y:12}];
-        this.dir = {x:0, y:-1}; this.nextDir = {x:0, y:-1};
         
         this.spawnFood();
-        this.bindControls();
-        this.lastTick = performance.now();
-        requestAnimationFrame((t) => this.loop(t));
+        this.bind(mode);
+        this.run();
     },
 
-    bindControls() {
-        // КЛАВИАТУРА
-        window.onkeydown = e => {
-            const k = {'KeyW':{x:0,y:-1},'KeyS':{x:0,y:1},'KeyA':{x:-1,y:0},'KeyD':{x:1,y:0},
-                       'ArrowUp':{x:0,y:-1},'ArrowDown':{x:0,y:1},'ArrowLeft':{x:-1,y:0},'ArrowRight':{x:1,y:0}};
-            if(k[e.code]) this.setDir(k[e.code]);
-        };
-
-        // ТАЧ (Свайпы)
-        let tsX, tsY;
-        this.canvas.ontouchstart = e => {
-            tsX = e.touches[0].clientX; tsY = e.touches[0].clientY;
-        };
-        this.canvas.ontouchend = e => {
-            const dx = e.changedTouches[0].clientX - tsX;
-            const dy = e.changedTouches[0].clientY - tsY;
-            if (Math.abs(dx) > Math.abs(dy)) {
-                if (Math.abs(dx) > 20) this.setDir({x: dx > 0 ? 1 : -1, y: 0});
-            } else {
-                if (Math.abs(dy) > 20) this.setDir({x: 0, y: dy > 0 ? 1 : -1});
-            }
-        };
-    },
-
-    setDir(d) {
-        if(d.x !== -this.dir.x && d.y !== -this.dir.y) this.nextDir = d;
+    bind(mode) {
+        if(mode === 'pc') {
+            window.onkeydown = e => {
+                const k = {'KeyW':{x:0,y:-1},'KeyS':{x:0,y:1},'KeyA':{x:-1,y:0},'KeyD':{x:1,y:0},
+                           'ArrowUp':{x:0,y:-1},'ArrowDown':{x:0,y:1},'ArrowLeft':{x:-1,y:0},'ArrowRight':{x:1,y:0}};
+                if(k[e.code]) {
+                    let d = k[e.code];
+                    if(d.x !== -this.dir.x && d.y !== -this.dir.y) this.nextDir = d;
+                }
+            };
+        } else {
+            let tsX, tsY;
+            document.ontouchstart = e => { tsX = e.touches[0].clientX; tsY = e.touches[0].clientY; };
+            document.ontouchend = e => {
+                let dx = e.changedTouches[0].clientX - tsX;
+                let dy = e.changedTouches[0].clientY - tsY;
+                let d = Math.abs(dx) > Math.abs(dy) ? {x: dx > 0 ? 1 : -1, y: 0} : {x: 0, y: dy > 0 ? 1 : -1};
+                if(d.x !== -this.dir.x && d.y !== -this.dir.y) this.nextDir = d;
+            };
+        }
     },
 
     spawnFood() {
-        this.food = { x: Math.floor(Math.random()*this.grid), y: Math.floor(Math.random()*this.grid) };
-        if(this.snake.some(s => s.x === this.food.x && s.y === this.food.y)) this.spawnFood();
+        this.food = {x: Math.floor(Math.random()*this.grid), y: Math.floor(Math.random()*this.grid)};
     },
 
-    update() {
+    run() {
         if(this.isDead) return;
         this.dir = this.nextDir;
-        let head = { x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y };
+        let head = {x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y};
 
+        // Порталы
         this.portals.forEach(p => {
             if(head.x === p.x1 && head.y === p.y1) head = {x: p.x2, y: p.y2};
             else if(head.x === p.x2 && head.y === p.y2) head = {x: p.x1, y: p.y1};
         });
 
+        // Смерть
         if(head.x < 0 || head.x >= this.grid || head.y < 0 || head.y >= this.grid || 
            this.snake.some(s => s.x === head.x && s.y === head.y)) {
             this.isDead = true;
-            document.getElementById('final-score').innerText = `РЕЗУЛЬТАТ: ${this.score}`;
-            document.getElementById('death-msg').style.display = 'block';
+            document.getElementById('final-score').innerText = "SCORE: " + this.score;
+            document.getElementById('death-msg').style.display = "block";
             return;
         }
 
@@ -171,18 +162,24 @@ const Engine = {
         } else {
             this.snake.pop();
         }
+
+        this.draw();
+        setTimeout(() => requestAnimationFrame(() => this.run()), 100);
     },
 
     draw() {
         this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
         this.portals.forEach(p => {
             this.ctx.strokeStyle = p.color; this.ctx.lineWidth = 2;
             this.ctx.strokeRect(p.x1*this.tileSize+2, p.y1*this.tileSize+2, this.tileSize-4, this.tileSize-4);
             this.ctx.strokeRect(p.x2*this.tileSize+2, p.y2*this.tileSize+2, this.tileSize-4, this.tileSize-4);
         });
+
         this.ctx.fillStyle = '#f0f'; this.ctx.shadowBlur = 10; this.ctx.shadowColor = '#f0f';
         this.ctx.fillRect(this.food.x*this.tileSize+4, this.food.y*this.tileSize+4, this.tileSize-8, this.tileSize-8);
+
         this.snake.forEach((s, i) => {
             this.ctx.fillStyle = i === 0 ? '#fff' : this.skin.color;
             this.ctx.shadowBlur = i === 0 ? 15 : 0;
@@ -190,15 +187,6 @@ const Engine = {
             this.ctx.fillRect(s.x*this.tileSize, s.y*this.tileSize, this.tileSize-1, this.tileSize-1);
         });
         this.ctx.shadowBlur = 0;
-    },
-
-    loop(time) {
-        if (time - this.lastTick > this.tickRate) {
-            this.update();
-            this.draw();
-            this.lastTick = time;
-        }
-        if (!this.isDead) requestAnimationFrame((t) => this.loop(t));
     }
 };
 
