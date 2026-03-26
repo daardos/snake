@@ -2,189 +2,328 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SNAKE_OS: REBORN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SNAKE_RPG: BOSS_CHAOS_v44</title>
     <style>
-        :root { --neon: #0f0; --bg: #020205; }
-        * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; flex-direction: column; background: linear-gradient(-45deg, #020205, #080015, #001510, #050005); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: var(--neon); user-select: none; }
-        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        #menu { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px); padding: 20px; text-align: center; }
-        .skin-list { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; justify-content: center; }
-        .skin-card { border: 1px solid #222; padding: 10px; cursor: pointer; background: #050505; width: 75px; border-radius: 8px; transition: 0.3s; }
-        .skin-card.active { border-color: var(--neon); box-shadow: 0 0 15px var(--neon); transform: scale(1.1); }
-        .skin-preview { width: 25px; height: 25px; margin: 0 auto 5px; border-radius: 4px; }
-        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 15px 30px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 5px; margin: 5px; }
-        #ui { display: none; flex-direction: column; height: 100vh; }
-        #header { padding: 10px 20px; border-bottom: 1px solid rgba(0,255,0,0.1); display: flex; justify-content: space-between; background: rgba(0,0,0,0.7); }
-        #viewport { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; }
-        canvas { border: 1px solid rgba(0,255,0,0.2); background: #000; }
-        .msg { position: absolute; background: rgba(0,0,0,0.95); padding: 30px; border: 2px solid var(--neon); display: none; text-align: center; z-index: 10; width: 85%; max-width: 400px; }
+        :root { --neon: #0f0; --accent: #f0f; --bg: #020205; }
+        * { box-sizing: border-box; touch-action: none; margin: 0; padding: 0; }
+        body { font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; flex-direction: column; background: #000; color: var(--neon); user-select: none; }
+        #ui { padding: 10px; background: rgba(0,0,0,0.9); border-bottom: 1px solid #222; z-index: 50; }
+        .stats-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+        .bar-container { width: 60px; height: 6px; background: #222; border: 1px solid #444; border-radius: 3px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 0.2s; background: #f00; }
+        #tp-panel { display: none; justify-content: center; flex-wrap: wrap; gap: 5px; padding: 10px; background: #000; border-top: 1px solid #222; }
+        .tp-btn { background: #111; border: 1px solid var(--neon); color: var(--neon); font-size: 8px; padding: 5px 8px; cursor: pointer; border-radius: 4px; }
+        #start-menu { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 300; border: 4px double var(--neon); padding: 20px; }
+        .menu-title { font-size: 28px; color: var(--neon); margin-bottom: 20px; text-shadow: 0 0 15px var(--neon); letter-spacing: 4px; }
+        .section-label { font-size: 10px; color: #555; margin: 10px 0 5px; }
+        .picker-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .color-opt { width: 30px; height: 30px; border: 2px solid #fff; cursor: pointer; border-radius: 50%; }
+        .color-opt.active { transform: scale(1.2); border-color: white; box-shadow: 0 0 15px currentColor; }
+        .diff-opt { padding: 5px 10px; border: 1px solid #444; color: #444; font-size: 10px; cursor: pointer; border-radius: 4px; }
+        .diff-opt.active { border-color: var(--neon); color: var(--neon); background: rgba(0,255,0,0.1); }
+        .start-btn { background: none; border: 2px solid var(--neon); color: var(--neon); padding: 12px 25px; cursor: pointer; margin: 5px; width: 220px; }
+        #viewport { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; background: #050505; }
+        canvas { background: #000; border: 1px solid #111; }
+        #shop-modal { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; border: 2px solid var(--accent); margin: 20px; border-radius: 15px; }
+        .shop-item { width: 85%; background: rgba(255,255,255,0.05); padding: 10px; margin: 4px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+        .msg { position: absolute; background: #000; padding: 30px; border: 2px solid red; display: none; text-align: center; z-index: 150; }
     </style>
 </head>
 <body>
 
-<div id="menu">
-    <h1 style="text-shadow: 0 0 10px var(--neon);">SNAKE_OS_v7</h1>
-    <div class="skin-list" id="skin-list"></div>
-    <div>
-        <button class="btn" onclick="App.start('pc')">PC_MODE</button>
-        <button class="btn" onclick="App.start('mobile')">MOBILE_MODE</button>
+<div id="flash" style="position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:200; transition: opacity 0.1s;"></div>
+
+<div id="start-menu">
+    <div class="menu-title">SNAKE_RPG</div>
+    <div class="section-label">CHOOSE_SKIN:</div>
+    <div class="picker-row">
+        <div class="color-opt active" style="background: #0f0;" data-color="#0f0"></div>
+        <div class="color-opt" style="background: #0ff;" data-color="#0ff"></div>
+        <div class="color-opt" style="background: #f0f;" data-color="#f0f"></div>
+        <div class="color-opt" style="background: #ff0;" data-color="#ff0"></div>
     </div>
+    <div class="section-label">DIFFICULTY:</div>
+    <div class="picker-row">
+        <div class="diff-opt" data-mult="1.4">EASY</div>
+        <div class="diff-opt active" data-mult="1.0">NORMAL</div>
+        <div class="diff-opt" data-mult="0.75">HARD</div>
+    </div>
+    <button class="start-btn" onclick="Engine.startGame(1)">NEW_BOOT_SEQUENCE</button>
+    <button id="resume-btn" class="start-btn" onclick="Engine.startGame(4)" disabled>LOAD_ZONE_BASE</button>
 </div>
 
 <div id="ui">
-    <div id="header"><div>SCORE: <span id="ui-score">0</span></div><div>SYSTEM: ONLINE</div></div>
-    <div id="viewport">
-        <canvas id="main"></canvas>
-        <div id="death-msg" class="msg">
-            <h1 style="color:red">SYSTEM_CRASH</h1>
-            <p id="final-score"></p>
-            <button class="btn" onclick="location.reload()">REBOOT</button>
-        </div>
+    <div class="stats-row">
+        <div>DIM: <b id="ui-lvl">1</b></div>
+        <div>HP: <div class="bar-container"><div id="hp-bar" class="bar-fill"></div></div></div>
+        <div id="ui-target">DATA: 0/10</div>
+        <div style="font-size: 9px;">ATK:<b id="ui-atk">5</b> DEF:<b id="ui-def">2</b></div>
     </div>
 </div>
 
-<script>
-const Skins = {
-    green: '#0f0', cyan: '#0ff', gold: '#ffd700', lava: '#f40'
-};
+<div id="viewport">
+    <canvas id="main"></canvas>
+    <div id="shop-modal">
+        <h2 style="color:var(--accent); margin-bottom: 10px;">SHOP_TERMINAL</h2>
+        <div id="shop-data" style="color:yellow; margin-bottom:15px; font-size: 14px;">DATA: 0</div>
+        <div class="shop-item"><div>+20 HP</div><button class="tp-btn" onclick="Engine.buy('hp')">5 DATA</button></div>
+        <div class="shop-item"><div>+3 ATK</div><button class="tp-btn" onclick="Engine.buy('atk')">5 DATA</button></div>
+        <div class="shop-item"><div>+1 DEF</div><button class="tp-btn" onclick="Engine.buy('def')">8 DATA</button></div>
+        <button class="start-btn" style="border-color:#555; color:#555; margin-top:15px;" onclick="Engine.closeShop()">CLOSE</button>
+    </div>
+    <div id="death-msg" class="msg">
+        <h1 style="color:red; font-size: 24px;">CORE_FAILURE</h1>
+        <button class="start-btn" onclick="location.reload()">REBOOT</button>
+    </div>
+</div>
 
-const App = {
-    skin: 'green',
-    init() {
-        const list = document.getElementById('skin-list');
-        Object.entries(Skins).forEach(([key, color]) => {
-            const card = document.createElement('div');
-            card.className = `skin-card ${this.skin === key ? 'active' : ''}`;
-            card.innerHTML = `<div class="skin-preview" style="background:${color}"></div><div style="font-size:10px">${key.toUpperCase()}</div>`;
-            card.onclick = () => {
-                this.skin = key;
-                document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('active'));
-                card.classList.add('active');
-                document.documentElement.style.setProperty('--neon', color);
-            };
-            list.appendChild(card);
+<div id="tp-panel">
+    <button class="tp-btn" onclick="Engine.jumpTo(1)">L1</button>
+    <button class="tp-btn" onclick="Engine.jumpTo(2)">L2</button>
+    <button class="tp-btn" onclick="Engine.jumpTo(3)" style="color:red">BOSS</button>
+    <button class="tp-btn" onclick="Engine.jumpTo(4)" style="color:cyan">BASE</button>
+    <button class="tp-btn" onclick="Engine.jumpTo(5)" style="color:orange">HUNT</button>
+    <button class="tp-btn" onclick="Engine.jumpTo(6)" style="color:#a0f">L6</button>
+</div>
+
+<script>
+const Engine = {
+    grid: 25, lvl: 1, isDead: false, isShopOpen: false, started: false,
+    walls: [], snake: [], mobs: [], boss: null, food: null, exit: null,
+    hp: 100, maxHp: 100, data: 0, atk: 5, def: 2, target: 10,
+    baseTick: 110, tickRate: 110, lastTick: 0, diffMult: 1.0,
+    dir: {x:0, y:-1}, nextDir: {x:0, y:-1}, snakeColor: '#0f0',
+
+    boot() {
+        this.cvs = document.getElementById('main');
+        this.ctx = this.cvs.getContext('2d');
+        const s = Math.min(window.innerWidth - 30, window.innerHeight - 340);
+        this.ts = Math.floor(s / this.grid);
+        this.cvs.width = this.cvs.height = this.grid * this.ts;
+        this.setupMenu();
+        this.bind();
+        this.loop(0);
+    },
+
+    setupMenu() {
+        if(localStorage.getItem('snake_base')) document.getElementById('resume-btn').disabled = false;
+        document.querySelectorAll('.color-opt').forEach(o => o.onclick = () => {
+            document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('active'));
+            o.classList.add('active'); this.snakeColor = o.dataset.color;
+        });
+        document.querySelectorAll('.diff-opt').forEach(o => o.onclick = () => {
+            document.querySelectorAll('.diff-opt').forEach(e => e.classList.remove('active'));
+            o.classList.add('active'); this.diffMult = parseFloat(o.dataset.mult);
         });
     },
-    start(mode) {
-        document.getElementById('menu').style.display = 'none';
-        document.getElementById('ui').style.display = 'flex';
-        Game.boot(mode, Skins[this.skin]);
-    }
-};
 
-const Game = {
-    boot(mode, color) {
-        this.canvas = document.getElementById('main');
-        this.ctx = this.canvas.getContext('2d');
-        this.grid = mode === 'mobile' ? 20 : 25;
-        this.color = color;
-        
-        const s = Math.min(window.innerWidth - 30, window.innerHeight - 150);
-        this.tileSize = Math.floor(s / this.grid);
-        this.canvas.width = this.canvas.height = this.grid * this.tileSize;
-
-        this.snake = [{x: 10, y: 10}, {x: 10, y: 11}, {x: 10, y: 12}];
-        this.dir = {x: 0, y: -1};
-        this.nextDir = {x: 0, y: -1};
-        this.portals = [{x1: 2, y1: 2, x2: this.grid-3, y2: this.grid-3}];
-        this.score = 0;
-        this.isDead = false;
-
-        this.bind(mode);
-        this.spawnFood();
-        this.loop();
+    startGame(lvl) {
+        this.lvl = lvl; this.tickRate = this.baseTick * this.diffMult;
+        this.started = true; document.getElementById('start-menu').style.display = 'none';
+        document.getElementById('tp-panel').style.display = 'flex';
+        this.reset();
     },
 
-    bind(mode) {
-        if(mode === 'pc') {
-            window.onkeydown = e => {
-                const k = {'KeyW':{x:0,y:-1},'KeyS':{x:0,y:1},'KeyA':{x:-1,y:0},'KeyD':{x:1,y:0},
-                           'ArrowUp':{x:0,y:-1},'ArrowDown':{x:0,y:1},'ArrowLeft':{x:-1,y:0},'ArrowRight':{x:1,y:0}};
-                if(k[e.code]) {
-                    let d = k[e.code];
-                    if(d.x !== -this.dir.x && d.y !== -this.dir.y) this.nextDir = d;
-                }
-            };
+    jumpTo(lvl) { this.lvl = lvl; this.isDead = false; document.getElementById('death-msg').style.display = 'none'; this.reset(); },
+
+    reset() {
+        this.snake = [{x:12, y:20}, {x:12, y:21}, {x:12, y:22}];
+        this.dir = {x:0, y:-1}; this.nextDir = (this.lvl >= 4) ? {x:0,y:0} : {x:0,y:-1};
+        this.walls = []; this.mobs = []; this.boss = null; this.exit = null; this.data = 0;
+        
+        if(this.lvl === 4) {
+            localStorage.setItem('snake_base', 'true');
+            for(let x=8; x<=16; x++) this.walls.push({x, y:10}, {x, y:16});
+            for(let y=11; y<16; y++) this.walls.push({x:8, y}, {x:16, y});
+            this.exit = {x:12, y:11}; this.shopPos = {x:12, y:14}; this.target = 0;
+        } else if(this.lvl === 3) {
+            this.boss = {x:12, y:5, hp:15}; this.target = 15; this.spawnFood();
         } else {
-            let tsX, tsY;
-            document.ontouchstart = e => { tsX = e.touches.clientX; tsY = e.touches.clientY; };
-            document.ontouchend = e => {
-                let dx = e.changedTouches.clientX - tsX;
-                let dy = e.changedTouches.clientY - tsY;
-                let d = Math.abs(dx) > Math.abs(dy) ? {x: dx > 0 ? 1 : -1, y: 0} : {x: 0, y: dy > 0 ? 1 : -1};
-                if(d.x !== -this.dir.x && d.y !== -this.dir.y) this.nextDir = d;
-            };
+            this.target = (this.lvl === 5) ? 10 : (this.lvl === 6 ? 20 : 5 + this.lvl*5);
+            const wallCount = (this.lvl === 6) ? 60 : (this.lvl === 5 ? 15 : this.lvl*10);
+            for(let i=0; i<wallCount; i++) {
+                let wx = Math.floor(Math.random()*25), wy = Math.floor(Math.random()*20);
+                if(wy < 18) this.walls.push({x:wx, y:wy});
+            }
+            if(this.lvl >= 5) for(let i=0; i<8; i++) this.spawnMob();
+            this.spawnFood();
         }
+        this.updateUI();
     },
 
     spawnFood() {
-        this.food = {x: Math.floor(Math.random()*this.grid), y: Math.floor(Math.random()*this.grid)};
+        this.food = {x:Math.floor(Math.random()*25), y:Math.floor(Math.random()*25)};
+        const inSnake = this.snake.some(s => s.x === this.food.x && s.y === this.food.y);
+        const inWall = this.walls.some(w => w.x === this.food.x && w.y === this.food.y);
+        if(inSnake || inWall || (this.boss && Math.abs(this.food.x-this.boss.x) < 2 && Math.abs(this.food.y-this.boss.y) < 2)) return this.spawnFood();
     },
 
-    loop() {
-        if(this.isDead) return;
+    spawnWallAtRandom() {
+        let wx = Math.floor(Math.random()*25), wy = Math.floor(Math.random()*25);
+        const inSnake = this.snake.some(s => s.x === wx && s.y === wy);
+        const inFood = this.food && this.food.x === wx && this.food.y === wy;
+        const inBoss = this.boss && Math.abs(wx-this.boss.x) < 2 && Math.abs(wy-this.boss.y) < 2;
+        if(inSnake || inFood || inBoss) return this.spawnWallAtRandom();
+        this.walls.push({x: wx, y: wy});
+    },
+
+    spawnMob() {
+        let mx = Math.floor(Math.random()*25), my = Math.floor(Math.random()*20);
+        if(this.walls.some(w=>w.x===mx&&w.y===my)) return this.spawnMob();
+        this.mobs.push({x:mx, y:my, hp:15});
+    },
+
+    updateUI() {
+        const names = {3:"BOSS", 4:"BASE", 5:"HUNT", 6:"L6"};
+        document.getElementById('ui-lvl').innerText = names[this.lvl] || this.lvl;
+        document.getElementById('ui-target').innerText = `DATA: ${this.data}/${this.target}`;
+        document.getElementById('hp-bar').style.width = (this.hp/this.maxHp*100) + "%";
+        document.getElementById('ui-atk').innerText = this.atk;
+        document.getElementById('ui-def').innerText = this.def;
+        document.getElementById('shop-data').innerText = `DATA: ${this.data}`;
+    },
+
+    flash(color = '#fff') { 
+        const f = document.getElementById('flash'); f.style.backgroundColor = color;
+        f.style.opacity = 0.4; setTimeout(() => f.style.opacity = 0, 100);
+    },
+
+    moveBoss() {
+        if (!this.boss || Math.random() > 0.20) return; // Босс стал чуть медленнее
         
-        this.dir = this.nextDir;
-        let head = {x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y};
+        let dx = 0, dy = 0;
+        if (Math.random() < 0.3) {
+            // 30% преследует
+            dx = Math.sign(this.snake[0].x - this.boss.x);
+            dy = Math.sign(this.snake[0].y - this.boss.y);
+        } else {
+            // 70% случайный ход
+            const dirs = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+            const r = dirs[Math.floor(Math.random()*4)];
+            dx = r.x; dy = r.y;
+        }
 
-        // Порталы
-        this.portals.forEach(p => {
-            if(head.x === p.x1 && head.y === p.y1) head = {x: p.x2, y: p.y2};
-            else if(head.x === p.x2 && head.y === p.y2) head = {x: p.x1, y: p.y1};
+        // Проверка границ для босса 3х3
+        if(this.boss.x+dx > 1 && this.boss.x+dx < 23) this.boss.x += dx;
+        if(this.boss.y+dy > 1 && this.boss.y+dy < 23) this.boss.y += dy;
+        
+        if (this.snake.some(s => Math.abs(s.x-this.boss.x) <= 1 && Math.abs(s.y-this.boss.y) <= 1)) {
+            this.hp -= Math.max(5, 15 - this.def); this.flash('red');
+            if(this.hp <= 0) this.die(); this.updateUI();
+        }
+    },
+
+    moveMobs() {
+        if(this.lvl === 3) return this.moveBoss();
+        this.mobs.forEach(m => {
+            let ch = (this.lvl===5)?0.4:0.7; if(Math.random()>ch) return;
+            let dx=(this.lvl===5)?Math.floor(Math.random()*3-1):Math.sign(this.snake[0].x-m.x);
+            let dy=(this.lvl===5)?Math.floor(Math.random()*3-1):Math.sign(this.snake[0].y-m.y);
+            if(!this.walls.some(w=>w.x===m.x+dx && w.y===m.y+dy)) { m.x+=dx; m.y+=dy; }
+            if(this.snake.some(s=>s.x===m.x && s.y===m.y)) {
+                this.hp -= Math.max(2, 10 - this.def); if(this.hp<=0) this.die(); this.updateUI();
+            }
         });
+    },
 
-        // Проверка смерти
-        if(head.x < 0 || head.x >= this.grid || head.y < 0 || head.y >= this.grid || 
-           this.snake.some(s => s.x === head.x && s.y === head.y)) {
-            this.isDead = true;
-            document.getElementById('final-score').innerText = "SCORE: " + this.score;
-            document.getElementById('death-msg').style.display = "block";
-            return;
+    die() { this.isDead = true; document.getElementById('death-msg').style.display = 'block'; },
+    openShop() { this.isShopOpen = true; document.getElementById('shop-modal').style.display='flex'; this.updateUI(); },
+    closeShop() { this.isShopOpen = false; document.getElementById('shop-modal').style.display='none'; },
+    buy(t) { 
+        if(t==='hp' && this.data>=5) { this.maxHp+=20; this.hp=this.maxHp; this.data-=5; }
+        if(t==='atk' && this.data>=5) { this.atk+=3; this.data-=5; }
+        if(t==='def' && this.data>=8) { this.def+=1; this.data-=8; }
+        this.updateUI(); 
+    },
+
+    bind() {
+        window.addEventListener('keydown', e => {
+            const keys = {ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},KeyW:{x:0,y:-1},KeyS:{x:0,y:1},KeyA:{x:-1,y:0},KeyD:{x:1,y:0}};
+            if(keys[e.code]) {
+                const d = keys[e.code];
+                if(this.lvl >= 4) { this.nextDir = d; this.update(); this.nextDir = {x:0,y:0}; }
+                else if(d.x !== -this.dir.x || d.y !== -this.dir.y) this.nextDir = d;
+            }
+        });
+    },
+
+    update() {
+        if(!this.started || this.isDead || this.isShopOpen) return;
+        if(this.lvl >= 4 && this.nextDir.x===0 && this.nextDir.y===0) return;
+
+        this.dir = this.nextDir;
+        const head = { x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y };
+
+        let ate = false;
+        if(this.food && head.x === this.food.x && head.y === this.food.y) {
+            this.data++; ate = true;
+            if(this.boss) { 
+                this.boss.hp--; this.flash('cyan'); 
+                this.spawnWallAtRandom(); // Стенка при сборе яблока на боссе
+                if(this.boss.hp<=0) {this.boss=null; this.exit={x:12,y:1};} 
+                else this.spawnFood(); 
+            }
+            else { if(this.data >= this.target && this.lvl !== 4) this.exit = {x:12, y:1}; this.spawnFood(); }
+            this.updateUI();
+        }
+
+        const mIdx = this.mobs.findIndex(m => m.x === head.x && m.y === head.y);
+        if(mIdx !== -1) { this.mobs.splice(mIdx,1); this.data+=4; ate=true; this.updateUI(); if(this.data>=this.target) this.exit={x:12,y:1}; }
+
+        if(this.boss && Math.abs(head.x-this.boss.x) <= 1 && Math.abs(head.y-this.boss.y) <= 1) {
+            this.hp -= Math.max(5, 15 - this.def); this.flash('red'); this.updateUI();
+            if(this.hp <= 0) this.die(); return; 
+        }
+
+        if(this.lvl === 4 && head.x === this.shopPos.x && head.y === this.shopPos.y) { this.openShop(); return; }
+
+        const hitWall = head.x<0 || head.x>=25 || head.y<0 || head.y>=25 || this.walls.some(w=>w.x===head.x && w.y===head.y);
+        if(hitWall || this.snake.some(s=>s.x===head.x && s.y===head.y)) {
+            if(this.lvl >= 4) return;
+            this.hp -= (this.lvl===6)?20:15; this.flash('red');
+            if(this.hp <= 0) this.die(); this.updateUI(); return;
         }
 
         this.snake.unshift(head);
-        if(head.x === this.food.x && head.y === this.food.y) {
-            this.score += 100;
-            document.getElementById('ui-score').innerText = this.score;
-            this.spawnFood();
-        } else {
-            this.snake.pop();
-        }
+        if(!ate) this.snake.pop();
 
-        this.draw();
-        setTimeout(() => requestAnimationFrame(() => this.loop()), 100);
+        if(this.exit && head.x === this.exit.x && head.y === this.exit.y) { this.lvl++; this.reset(); }
+        if(this.lvl >= 3) this.moveMobs();
     },
 
     draw() {
-        // Полная очистка для стабильности видимости
-        this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Порталы
-        this.portals.forEach(p => {
-            this.ctx.strokeStyle = 'cyan'; this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(p.x1*this.tileSize+2, p.y1*this.tileSize+2, this.tileSize-4, this.tileSize-4);
-            this.ctx.strokeRect(p.x2*this.tileSize+2, p.y2*this.tileSize+2, this.tileSize-4, this.tileSize-4);
+        this.ctx.clearRect(0,0,this.cvs.width,this.cvs.height);
+        this.ctx.fillStyle = (this.lvl===6)?'#f00':'#112';
+        this.walls.forEach(w => this.ctx.fillRect(w.x*this.ts, w.y*this.ts, this.ts-1, this.ts-1));
+        if(this.food && this.lvl!==4) {
+            this.ctx.fillStyle='#0f0'; this.ctx.fillRect(this.food.x*this.ts+3, this.food.y*this.ts+3, this.ts-6, this.ts-6);
+        }
+        this.mobs.forEach(m => { this.ctx.fillStyle='#f33'; this.ctx.beginPath(); this.ctx.arc(m.x*this.ts+this.ts/2, m.y*this.ts+this.ts/2, this.ts/3, 0, 7); this.ctx.fill(); });
+        if(this.boss) { 
+            this.ctx.fillStyle='red'; this.ctx.shadowBlur=10; this.ctx.shadowColor='red';
+            this.ctx.fillRect((this.boss.x-1)*this.ts, (this.boss.y-1)*this.ts, this.ts*3, this.ts*3);
+            this.ctx.shadowBlur=0;
+        }
+        if(this.lvl===4) { this.ctx.fillStyle='#f0f'; this.ctx.fillRect(this.shopPos.x*this.ts, this.shopPos.y*this.ts, this.ts, this.ts); }
+        this.snake.forEach((s,i) => {
+            this.ctx.fillStyle = i===0?'#fff':this.snakeColor;
+            this.ctx.globalAlpha = Math.max(0.3, 1-(i/this.snake.length));
+            this.ctx.fillRect(s.x*this.ts, s.y*this.ts, this.ts-1, this.ts-1);
         });
+        this.ctx.globalAlpha = 1;
+        if(this.exit) { this.ctx.fillStyle='#fff'; this.ctx.fillRect(this.exit.x*this.ts, this.exit.y*this.ts, this.ts, this.ts); }
+    },
 
-        // Еда
-        this.ctx.fillStyle = '#f0f'; this.ctx.shadowBlur = 15; this.ctx.shadowColor = '#f0f';
-        this.ctx.fillRect(this.food.x*this.tileSize+4, this.food.y*this.tileSize+4, this.tileSize-8, this.tileSize-8);
-
-        // Змейка
-        this.snake.forEach((s, i) => {
-            this.ctx.fillStyle = i === 0 ? '#fff' : this.color;
-            this.ctx.shadowBlur = i === 0 ? 20 : 0;
-            this.ctx.shadowColor = this.color;
-            this.ctx.fillRect(s.x*this.tileSize, s.y*this.tileSize, this.tileSize-1, this.tileSize-1);
-        });
-        this.ctx.shadowBlur = 0;
+    loop(t) {
+        if(this.started && !this.isDead && !this.isShopOpen && this.lvl < 4 && t-this.lastTick > this.tickRate) {
+            this.update(); this.lastTick = t;
+        }
+        this.draw();
+        requestAnimationFrame(t => this.loop(t));
     }
 };
-
-App.init();
+Engine.boot();
 </script>
 </body>
 </html>
